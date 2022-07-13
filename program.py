@@ -4,20 +4,21 @@ from typing import NamedTuple
 class TokenTypes(Enum):
     numberToken = 'numberToken'
     identifierToken = 'identifierToken'
-    plusToken = 'plusToken'
-    minusToken = 'minusToken'
-    mulToken = 'mulToken'
-    divToken = 'divToken'
-    returnToken = 'returnToken'
-    openbraceToken = 'openbraceToken'
-    closebraceToken = 'closebraceToken'
-    openparToken = 'openparToken'
-    closeparToken = 'closeparToken'
-    semicolonToken = 'semicolonToken'
-    intToken = 'intToken'
+    plusToken = '+'
+    minusToken = '-'
+    mulToken = '*'
+    divToken = '/'
+    openbraceToken = '{'
+    closebraceToken = '}'
+    openparToken = '('
+    closeparToken = ')'
+    semicolonToken = ';'
+    returnToken = 'return'
+    intToken = 'int'
     errorToken = 'errorToken'
     end = '\0'
 
+TOKEN_VALUES = [t.value for t in TokenTypes]
 
 class Token(NamedTuple):
     token_type: TokenTypes
@@ -25,8 +26,12 @@ class Token(NamedTuple):
     text: str
     value: int | None
 
+class Node(NamedTuple):
+    name: str | int
+    child: tuple | None
 
 class Lexer:
+    ''' Lexer for code on C '''
     def __init__(self, text):
         self._text = text
         self._position = 0
@@ -37,51 +42,10 @@ class Lexer:
         if self._is_end():
             return Token(TokenTypes.end, self._position, '\0', None)
 
-        '''
-        if (self._text[self._position] == ' ' or
-                self._text[self._position] =='\n' or
-                self._text[self._position] =='\t'):
+        if self._text[self._position] in TOKEN_VALUES:
+            text = self._text[self._position]
             self._position += 1
-        
-        if self._text[self._position].isdigit():
-            start = self._position
-
-            while (self._position != len(self._text) and 
-                    self._text[self._position].isdigit()):
-                self._position += 1
-
-            text = self._text[start: self._position]
-            value = int(text)
-
-            return Token(TokenTypes.numberToken, start, text, value)
-        '''
-        if self._text[self._position] == '+':
-            self._position += 1
-            return Token(TokenTypes.plusToken, self._position - 1, '+', None)
-        elif self._text[self._position] == '-':
-            self._position += 1
-            return Token(TokenTypes.minusToken, self._position - 1, '-', None)
-        elif self._text[self._position] == '*':
-            self._position += 1
-            return Token(TokenTypes.mulToken, self._position - 1, '*', None)
-        elif self._text[self._position]  == '/':
-            self._position += 1
-            return Token(TokenTypes.divToken, self._position - 1, '/', None)
-        elif self._text[self._position]  == '{':
-            self._position += 1
-            return Token(TokenTypes.openbraceToken, self._position - 1, '{', None)
-        elif self._text[self._position]  == '}':
-            self._position += 1
-            return Token(TokenTypes.closebraceToken, self._position - 1, '}', None)
-        elif self._text[self._position]  == '(':
-            self._position += 1
-            return Token(TokenTypes.openparToken, self._position - 1, '(', None)
-        elif self._text[self._position]  == ')':
-            self._position += 1
-            return Token(TokenTypes.closeparToken, self._position - 1, ')', None)
-        elif self._text[self._position]  == ';':
-            self._position += 1
-            return Token(TokenTypes.semicolonToken, self._position - 1, ';', None)
+            return Token(TokenTypes(text), self._position - 1, text, None)
         elif self._text[self._position:self._position+3] == 'int':
             self._position += 3
             return Token(TokenTypes.intToken, self._position - 3, 'int', None)
@@ -120,16 +84,82 @@ class Lexer:
     def _is_end(self) -> bool:
         return self._position == len(self._text)
 
+class Parser:
+    def __init__(self, text):
+        self._text = text
+        self._tokens = Lexer(text)
 
-if __name__ == '__main__':
-    s = open('return_2.c').read()
+    def get_tree(self) -> Node:
+        program = Node('Program', self._parce_function())
+        return program
+
+    def _parce_function(self) -> Node:
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.intToken:
+            raise 'Bad syntax'
+
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.identifierToken:
+            raise 'Bad syntax'
+        name = token.text
+
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.openparToken:
+            raise 'Bad syntax'
+
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.closeparToken:
+            raise 'Bad syntax'
+
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.openbraceToken:
+            raise 'Bad syntax'
+
+        statement = self._parce_statement()
+
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.closebraceToken:
+            raise 'Bad syntax'
+
+        return Node(name, statement)
+
+    def _parce_statement(self) -> Node:
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.returnToken:
+            raise 'Bad syntax'
+
+        expression = self._parce_exp()
+
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.semicolonToken:
+            raise 'Bad syntax'
+
+        return Node('statement', expression)
+
+    def _parce_exp(self) -> Node:
+        token = self._tokens.get_next_token()
+        if token.token_type != TokenTypes.numberToken:
+            raise 'Bad syntax'
+
+        return Node(token.value, None)
+
+def check_lexer(filename):
+    s = open(filename).read()
     
     lexer = Lexer(s)
     
     token = lexer.get_next_token()
 
     while token.token_type != TokenTypes.end:
-        print(token.token_type.value, token.text, token.value)
+        print(token.token_type, token.text, token.value)
         token = lexer.get_next_token()
 
+if __name__ == '__main__':
+    s = open('return_2.c').read()
 
+    parser = Parser(s)
+
+    child = parser.get_tree()
+    while child != None:
+        print(child)
+        child = child.child
