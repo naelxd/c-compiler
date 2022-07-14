@@ -1,21 +1,13 @@
-#!/usr/bin/env python3
-import sys
+#!/bin/bash
 
-def lex_code(code):
-    tokens = []
-    s = ''
-    for i in range(len(code)):
-        if code[i] in '{}(); ':
-            if s:
-                tokens.append(s)
-                s = ''
-            if code[i] != ' ':
-                tokens.append(code[i])
-        else:
-            if code[i] != '\n':
-                s += code[i]
-    return tokens
+python3 "$(dirname -- "$(readlink -f "${BASH_SOURCE}")")/pcomp.py" $@
+name=${1%.*}
 
-with open(sys.argv[1], 'r') as f:
-    code = f.read()
-    print(lex_code(code))
+if [ $# == 2 ]
+then
+    gcc $2 -o $name 
+    rm $2
+else
+    gcc result.s -o $name
+    rm result.s
+fi
