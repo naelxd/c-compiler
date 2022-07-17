@@ -33,7 +33,8 @@ class Lexer:
             while (not self._is_end() and
                     self._text[self._position] != ' ' and
                     self._text[self._position] not in 
-                    ['}', '{', '(', ')', ';', '+', '-', '*', '/']):
+                    ['}', '{', '(', ')', ';', '+', 
+                    '-', '*', '/', ' ', '\n', '\t']):
                 self._position += 1
             text = self._text[start:self._position]
             
@@ -62,4 +63,8 @@ def check_lexer(filename):
         token = lexer.get_next_token()
 
 if __name__ == '__main__':
-    check_lexer('return_2.c')
+    import glob
+    paths = glob.glob('write_a_c_compiler/stage_2/valid/*')
+    for path in paths:
+        check_lexer(path)
+        print('----------------')

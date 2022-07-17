@@ -8,6 +8,8 @@ class TokenTypes(Enum):
     minusToken = '-'
     mulToken = '*'
     divToken = '/'
+    bitwiseToken = '~'
+    lognegToken = '!'
     openbraceToken = '{'
     closebraceToken = '}'
     openparToken = '('
@@ -19,6 +21,8 @@ class TokenTypes(Enum):
     end = '\0'
 
 TOKEN_VALUES = [t.value for t in TokenTypes]
+UNARY_OPERATORS = [TokenTypes.minusToken, TokenTypes.bitwiseToken,
+                    TokenTypes.lognegToken]
 
 class Token(NamedTuple):
     token_type: TokenTypes

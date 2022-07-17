@@ -1,22 +1,18 @@
-from typing import NamedTuple
 from lexer import Lexer
-from lexer_types import TokenTypes
-
-class Node(NamedTuple):
-    node_type: str
-    name: str | int | None
-    child: tuple | None
+from lexer_types import TokenTypes, UNARY_OPERATORS
+from parser_types import *
 
 class Parser:
     def __init__(self, text):
         self._text = text
         self._tokens = Lexer(text)
 
-    def get_tree(self) -> Node:
-        program = Node('Program', None, self._parce_function())
+    def get_tree(self) -> Program:
+        functions = self._parse_function()
+        program = Program(functions)
         return program
 
-    def _parce_function(self) -> Node:
+    def _parse_function(self) -> Function:
         token = self._tokens.get_next_token()
         if token.token_type != TokenTypes.intToken:
             raise 'Bad syntax'
@@ -38,33 +34,37 @@ class Parser:
         if token.token_type != TokenTypes.openbraceToken:
             raise 'Bad syntax'
 
-        statement = self._parce_statement()
+        statement = self._parse_statement()
 
         token = self._tokens.get_next_token()
         if token.token_type != TokenTypes.closebraceToken:
             raise 'Bad syntax'
 
-        return Node('Function', name, statement)
+        return Function(name, statement)
 
-    def _parce_statement(self) -> Node:
+    def _parse_statement(self) -> Return:
         token = self._tokens.get_next_token()
-        if token.token_type != TokenTypes.returnToken:
-            raise 'Bad syntax'
+        if token.token_type == TokenTypes.returnToken:
+        
+            expression = self._parse_exp()
 
-        expression = self._parce_exp()
+            token = self._tokens.get_next_token()
+            if token.token_type != TokenTypes.semicolonToken:
+                raise 'Bad syntax'
 
+            return Return(expression)
+
+        raise 'Bad syntax'
+
+    def _parse_exp(self) -> Constant | UnaryOperator:
         token = self._tokens.get_next_token()
-        if token.token_type != TokenTypes.semicolonToken:
+        if token.token_type == TokenTypes.numberToken:
+            return Constant(token.value)
+
+        elif token.token_type in UNARY_OPERATORS:
+            return UnaryOperator(token.text, self._parse_exp()) 
+        else:
             raise 'Bad syntax'
-
-        return Node('Statement', 'return', expression)
-
-    def _parce_exp(self) -> Node:
-        token = self._tokens.get_next_token()
-        if token.token_type != TokenTypes.numberToken:
-            raise 'Bad syntax'
-
-        return Node('Expression', token, None)
 
 def check_parser(filename):
     s = open(filename).read()
@@ -73,10 +73,10 @@ def check_parser(filename):
 
     child = parser.get_tree()
     ind = ''
-    while child != None:
+    while type(child).__name__ != 'Constant':
         print(ind, child)
         ind += '    '
         child = child.child
 
 if __name__ == '__main__':
-    check_parser('return_2.c')
+    check_parser('nested_ops.c')
