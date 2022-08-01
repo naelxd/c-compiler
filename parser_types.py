@@ -7,6 +7,11 @@ class UnaryOperator(NamedTuple):
     operator: str
     child: Constant
 
+class BinaryOperator(NamedTuple):
+    operator: str
+    child1: Constant | UnaryOperator
+    child2: Constant | UnaryOperator
+
 class Return(NamedTuple):
     child: Constant 
 

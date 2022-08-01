@@ -23,6 +23,8 @@ class TokenTypes(Enum):
 TOKEN_VALUES = [t.value for t in TokenTypes]
 UNARY_OPERATORS = [TokenTypes.minusToken, TokenTypes.bitwiseToken,
                     TokenTypes.lognegToken]
+BINARY_OPERATORS = [TokenTypes.minusToken, TokenTypes.plusToken,
+                    TokenTypes.mulToken, TokenTypes.divToken]
 
 class Token(NamedTuple):
     token_type: TokenTypes
